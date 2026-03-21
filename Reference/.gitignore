@@ -1,0 +1,6 @@
+/.vs
+/x64
+glslc.exe
+**/*.bat
+**/*.vsb
+**/*.fsb
