@@ -30,3 +30,7 @@ class FullScreenQuadMeshComponent : public StaticMeshComponent {
 public:
 	void Init();
 };
+class GroundMeshComponent : public StaticMeshComponent {
+public:
+	void Init(float size = 10.0f);
+};

@@ -113,6 +113,24 @@ void StaticMeshComponent::Draw(VkCommandBuffer inCommandBuffer) {
 		}
 	}
 }
+void GroundMeshComponent::Init(float size) {
+	float half = size * 0.5f;
+	mVertexCount = 4;
+	mVertexData = new StaticMeshVertexData[4];
+	mVertexDataSize = sizeof(StaticMeshVertexData);
+	SetPosition(0, -half, 0.0f, -half);
+	SetPosition(1,  half, 0.0f, -half);
+	SetPosition(2, -half, 0.0f,  half);
+	SetPosition(3,  half, 0.0f,  half);
+	SetTexcoord(0, 0.0f, 0.0f);
+	SetTexcoord(1, size, 0.0f);
+	SetTexcoord(2, 0.0f, size);
+	SetTexcoord(3, size, size);
+	SetNormal(0, 0.0f, 1.0f, 0.0f);
+	SetNormal(1, 0.0f, 1.0f, 0.0f);
+	SetNormal(2, 0.0f, 1.0f, 0.0f);
+	SetNormal(3, 0.0f, 1.0f, 0.0f);
+}
 void FullScreenQuadMeshComponent::Init() {
 	mVertexCount = 4;
 	mVertexData = new StaticMeshVertexData[4];

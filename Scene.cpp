@@ -22,6 +22,7 @@ static Texture* gBRDFLUTTexture = nullptr;
 static Node* gSkyBoxNode = nullptr;
 static Node* gSphereNode = nullptr;
 static Node* gHelmetNode = nullptr;
+static Node* gGroundNode = nullptr;
 static Node* gToneMappingNode = nullptr;
 
 static void ApplyViewportToMaterial(Material* material, bool flipY) {
@@ -55,6 +56,9 @@ static void RecreateHDRFBO() {
 	if (gHelmetNode != nullptr) {
 		gHelmetNode->mMaterial->mPipelineStateObject->mRenderPass = gHDRFBO->mRenderPass;
 	}
+	if (gGroundNode != nullptr) {
+		gGroundNode->mMaterial->mPipelineStateObject->mRenderPass = gHDRFBO->mRenderPass;
+	}
 	if (gToneMappingNode != nullptr) {
 		Material* toneMapping = gToneMappingNode->mMaterial;
 		toneMapping->mPipelineStateObject->mRenderPass = GetGlobalConfig().mSystemRenderPass;
@@ -80,6 +84,9 @@ void OnViewportChanged(int inWidth, int inHeight) {
 	}
 	if (gHelmetNode != nullptr) {
 		ApplyViewportToMaterial(gHelmetNode->mMaterial, true);
+	}
+	if (gGroundNode != nullptr) {
+		ApplyViewportToMaterial(gGroundNode->mMaterial, true);
 	}
 	if (gToneMappingNode != nullptr) {
 		ApplyViewportToMaterial(gToneMappingNode->mMaterial, false);
@@ -165,6 +172,24 @@ void InitScene() {
 	ApplyViewportToMaterial(gHelmetNode->mMaterial, true);
 	// STEP6_END
 
+	// STEP7_BEGIN: Ground plane (for shadow receiving)
+	gGroundNode = new Node;
+	gGroundNode->mModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, 0.0f));
+	gGroundNode->mStaticMeshComponent = new GroundMeshComponent;
+	((GroundMeshComponent*)gGroundNode->mStaticMeshComponent)->Init(10.0f);
+	gGroundNode->mMaterial = new Material("Res/PBR.vsb", "Res/Ground.fsb");
+	gGroundNode->mMaterial->mPrimitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+	gGroundNode->mMaterial->SetFrontFace(VK_FRONT_FACE_CLOCKWISE);
+	gGroundNode->mMaterial->SetTexture(4, gSkyBoxCubeMap->mImageView, GenCubeMapSampler());
+	gGroundNode->mMaterial->SetTexture(5, gPrefilteredColorCubeMap->mImageView, GenCubeMapSampler());
+	gGroundNode->mMaterial->SetTexture(6, gDiffuseIrradianceCubeMap->mImageView, GenCubeMapSampler());
+	gGroundNode->mMaterial->SetTexture(7, gBRDFLUTTexture->mImageView);
+	SetColorAttachmentCount(gGroundNode->mMaterial->mPipelineStateObject, 1);
+	gGroundNode->mMaterial->mPipelineStateObject->mRenderPass = gHDRFBO->mRenderPass;
+	gGroundNode->mMaterial->mPipelineStateObject->mSampleCount = VK_SAMPLE_COUNT_1_BIT;
+	ApplyViewportToMaterial(gGroundNode->mMaterial, true);
+	// STEP7_END
+
 	// STEP2_BEGIN: Fullscreen tone mapping pass
 	gToneMappingNode = new Node;
 	gToneMappingNode->mModelMatrix = glm::mat4(1.0f);
@@ -194,6 +219,9 @@ void RenderOneFrame() {
 	// STEP6_DRAW_BEGIN: helmet draw (comment this line to disable full PBR)
 	gHelmetNode->Draw(commandBuffer, gProjectionMatrix, gMainCamera);
 	// STEP6_DRAW_END
+	// STEP7_DRAW_BEGIN: ground plane draw
+	gGroundNode->Draw(commandBuffer, gProjectionMatrix, gMainCamera);
+	// STEP7_DRAW_END
 	// STEP5_DRAW_BEGIN: sphere draw (useful as intermediate learning stage)
 	// gSphereNode->Draw(commandBuffer, gProjectionMatrix, gMainCamera);
 	// STEP5_DRAW_END
