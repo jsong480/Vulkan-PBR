@@ -1,3 +1,0 @@
-# Demo videos: use Git LFS so files > 100 MB can be pushed to GitHub.
-# Install: https://git-lfs.com/  then run: git lfs install
-Demo/*.mp4 filter=lfs diff=lfs merge=lfs -text

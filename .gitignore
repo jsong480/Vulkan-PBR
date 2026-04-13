@@ -1,5 +1,6 @@
 /.vs
 /x64
+Demo/*.mp4
 glslc.exe
 **/*.bat
 **/*.vsb

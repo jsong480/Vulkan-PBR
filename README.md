@@ -12,36 +12,9 @@ A Windows / Vulkan learning demo that renders a physically based scene with defe
 
 ### Demo Video
 
-File: **`Demo/Vulkan PBR.mp4`** (~180 MB).
+**[Watch on YouTube](https://youtu.be/28LumUqsF84)**
 
-**Watch locally:** open the file with any player.
-
-**Upload the video to GitHub (no external link):** Git blocks files **> 100 MB** in normal commits. Use **Git LFS** so the MP4 lives in the repo and pushes to GitHub. This repo already includes **`.gitattributes`** so `Demo/*.mp4` is tracked by LFS.
-
-1. Install [Git LFS](https://git-lfs.com/) (Windows installer is fine).  
-2. In a terminal, at your repository root (the folder that contains `.git`):
-
-```bash
-git lfs install
-git add .gitattributes
-git add "Demo/Vulkan PBR.mp4"
-git commit -m "Add demo video (Git LFS)"
-git push
-```
-
-3. Anyone who clones the repo needs Git LFS installed; otherwise they only get a small pointer file. After `git lfs install`, `git clone` / `git pull` will download the real video.
-
-**Notes**
-
-- [GitHub LFS](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-git-large-file-storage): free tier includes **1 GiB** storage and **1 GiB/month** bandwidth (shared); one ~180 MB video is usually fine for occasional pushes.  
-- If you **already committed** the MP4 without LFS and push failed, remove it from the last commit or use `git lfs migrate`—ask for help if needed.  
-- **GitHub Releases** is another way to attach a large video **without** LFS: create a Release and upload the MP4 there; it still lives on GitHub, just not under the default branch tree.
-
-**Optional in README:** embed (may not play in the browser for very large files):
-
-```html
-<video src="Demo/Vulkan%20PBR.mp4" controls width="720"></video>
-```
+The repository does **not** include the video file; watch the demo via the link above.
 
 ### Features
 
@@ -89,8 +62,7 @@ glslc -fshader-stage=fragment Res/YourShader.fs -o Res/YourShader.fsb
 ### Repository Layout (short)
 
 - `Res/` — shaders (`.vs`, `.fs`, compiled `.vsb` / `.fsb`), textures, models  
-- Core sources: `Scene.*`, `MyVulkan.*`, `Material.*`, `FrameBuffer.*`, `Camera.*`, `Node.*`, `main.cpp`  
-- `Demo/` — demo video (e.g. `Vulkan PBR.mp4`) and other media
+- Core sources: `Scene.*`, `MyVulkan.*`, `Material.*`, `FrameBuffer.*`, `Camera.*`, `Node.*`, `main.cpp`
 
 ### License
 
@@ -106,35 +78,9 @@ Specify your license here (e.g. MIT) or “All rights reserved” if not open-so
 
 ### 演示视频
 
-文件：**`Demo/Vulkan PBR.mp4`**（约 180 MB）。
+**[在 YouTube 观看](https://youtu.be/28LumUqsF84)**
 
-**本机：** 用播放器直接打开即可。
-
-**想上传到 GitHub、又不想用 B 站等外链：** 普通 Git **单文件不能超过 100 MB**，所以大视频要用 **Git LFS**。本仓库已包含 **`.gitattributes`**，会把 `Demo/*.mp4` 交给 LFS 管理。
-
-在**仓库根目录**（包含 `.git` 的文件夹）打开终端，执行：
-
-```bash
-git lfs install
-git add .gitattributes
-git add "Demo/Vulkan PBR.mp4"
-git commit -m "Add demo video (Git LFS)"
-git push
-```
-
-克隆仓库的人也需要**安装 Git LFS**，否则只会看到小指针文件；装好后再 `git clone` / `git pull` 会拉取真实视频。
-
-**说明**
-
-- [GitHub 对 LFS 的说明](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-git-large-file-storage)：免费档有 **1 GiB 存储**和**每月 1 GiB 流量**（共用），单个 ~180 MB 视频一般够用。  
-- 若你**已经用普通方式提交过** MP4 导致 push 失败，需要先删掉错误提交或改用 `git lfs migrate`，需要时再查文档。  
-- **GitHub Releases**：也可以把视频作为 Release 附件上传，仍算「在 GitHub 上」，只是不在仓库主分支目录里。
-
-**可选：** 在 README 里用 HTML 内嵌（网页上可能无法播放超大 MP4）：
-
-```html
-<video src="Demo/Vulkan%20PBR.mp4" controls width="720"></video>
-```
+本仓库**不包含**视频文件，请通过上方链接查看演示。
 
 ### 功能概览
 
@@ -183,12 +129,7 @@ glslc -fshader-stage=fragment Res/YourShader.fs -o Res/YourShader.fsb
 
 - `Res/`：着色器、贴图、模型等  
 - 主要代码：`Scene.*`、`MyVulkan.*`、`Material.*`、`FrameBuffer.*`、`Camera.*`、`Node.*`、`main.cpp`  
-- `Demo/`：演示视频（如 `Vulkan PBR.mp4`）等素材  
 
 ### 许可证
 
 在此填写你的许可证（如 MIT）或保留所有权利。
-
----
-
-*Large demo videos: use Git LFS (see `.gitattributes` and Demo Video section).*
