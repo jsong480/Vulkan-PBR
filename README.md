@@ -12,9 +12,15 @@ A Windows / Vulkan learning demo that renders a physically based scene with defe
 
 ### Demo Video
 
-**[Watch on YouTube](https://youtu.be/28LumUqsF84)**
+Embed (works in some Markdown viewers; **GitHub’s web UI often removes `<iframe>` in README for security**, so if you see blank space below, use the link or thumbnail instead):
 
-The repository does **not** include the video file; watch the demo via the link above.
+<iframe width="560" height="315" src="https://www.youtube.com/embed/28LumUqsF84" title="Vulkan PBR demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+**[Watch on YouTube](https://youtu.be/28LumUqsF84)** — direct link.
+
+[![Video thumbnail — click to play on YouTube](https://img.youtube.com/vi/28LumUqsF84/hqdefault.jpg)](https://youtu.be/28LumUqsF84)
+
+The repository does **not** include a local video file.
 
 ### Features
 
@@ -78,9 +84,15 @@ Specify your license here (e.g. MIT) or “All rights reserved” if not open-so
 
 ### 演示视频
 
-**[在 YouTube 观看](https://youtu.be/28LumUqsF84)**
+下面为 YouTube 嵌入（在 **github.com 网页** 上 README 里 **经常会被去掉 `<iframe>`**，若看不到播放器，请点链接或下方缩略图）：
 
-本仓库**不包含**视频文件，请通过上方链接查看演示。
+<iframe width="560" height="315" src="https://www.youtube.com/embed/28LumUqsF84" title="Vulkan PBR demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+**[在 YouTube 打开](https://youtu.be/28LumUqsF84)**
+
+[![点击在 YouTube 播放](https://img.youtube.com/vi/28LumUqsF84/hqdefault.jpg)](https://youtu.be/28LumUqsF84)
+
+本仓库**不包含**本地视频文件。
 
 ### 功能概览
 
