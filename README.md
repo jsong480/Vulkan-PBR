@@ -12,11 +12,9 @@ A Windows / Vulkan learning demo that renders a physically based scene with defe
 
 ### Demo Video
 
-GitHub’s README viewer **does not render embedded players** (`<iframe>` is stripped, which used to leave a large blank gap). Use the thumbnail or link below.
-
 [![Vulkan PBR demo — click to play on YouTube](https://img.youtube.com/vi/28LumUqsF84/hqdefault.jpg)](https://www.youtube.com/watch?v=28LumUqsF84)
 
-**[Watch on YouTube](https://www.youtube.com/watch?v=28LumUqsF84)** (opens in a new tab from GitHub)
+**[Watch on YouTube](https://www.youtube.com/watch?v=28LumUqsF84)**
 
 The repository does **not** include a local video file.
 
@@ -81,8 +79,6 @@ Specify your license here (e.g. MIT) or “All rights reserved” if not open-so
 基于 **Vulkan** 的实时 **PBR** 演示程序（Windows），支持延迟 / 前向切换、IBL、阴影与多种后处理；着色器为 GLSL，使用 `glslc` 离线编译。
 
 ### 演示视频
-
-在 **github.com** 上浏览本 README 时 **无法内嵌 YouTube 播放器**（`<iframe>` 会被去掉，之前容易在文中留下一大块空白）。请直接点下方缩略图或链接。
 
 [![Vulkan PBR 演示 — 点击在 YouTube 播放](https://img.youtube.com/vi/28LumUqsF84/hqdefault.jpg)](https://www.youtube.com/watch?v=28LumUqsF84)
 
