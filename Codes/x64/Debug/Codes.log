@@ -1,2 +1,26 @@
-﻿  Scene.cpp
+﻿  Camera.cpp
+  Captures.cpp
+F:\Vulkan PBR\Codes\Captures.cpp(110,79): warning C4838: 从“int”转换到“uint32_t”需要收缩转换
+F:\Vulkan PBR\Codes\Captures.cpp(168,79): warning C4838: 从“int”转换到“uint32_t”需要收缩转换
+F:\Vulkan PBR\Codes\Captures.cpp(223,76): warning C4838: 从“int”转换到“uint32_t”需要收缩转换
+F:\Vulkan PBR\Codes\Captures.cpp(223,90): warning C4838: 从“int”转换到“uint32_t”需要收缩转换
+F:\Vulkan PBR\Codes\Captures.cpp(227,112): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+F:\Vulkan PBR\Codes\Captures.cpp(227,93): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+  FrameBuffer.cpp
+F:\Vulkan PBR\Codes\FrameBuffer.cpp(39,39): warning C4267: “=”: 从“size_t”转换到“int”，可能丢失数据
+F:\Vulkan PBR\Codes\FrameBuffer.cpp(102,64): warning C4267: “=”: 从“size_t”转换到“uint32_t”，可能丢失数据
+F:\Vulkan PBR\Codes\FrameBuffer.cpp(108,41): warning C4267: “=”: 从“size_t”转换到“uint32_t”，可能丢失数据
+F:\Vulkan PBR\Codes\FrameBuffer.cpp(117,44): warning C4267: “=”: 从“size_t”转换到“uint32_t”，可能丢失数据
+F:\Vulkan PBR\Codes\FrameBuffer.cpp(147,42): warning C4267: “=”: 从“size_t”转换到“uint32_t”，可能丢失数据
+  Material.cpp
+  Mesh.cpp
+  MyVulkan.cpp
+F:\Vulkan PBR\Codes\MyVulkan.cpp(460,24): warning C4244: “=”: 从“VkDeviceSize”转换到“int”，可能丢失数据
+F:\Vulkan PBR\Codes\MyVulkan.cpp(480,33): warning C4244: “参数”: 从“VkDeviceSize”转换到“int”，可能丢失数据
+F:\Vulkan PBR\Codes\MyVulkan.cpp(569,78): warning C4267: “=”: 从“size_t”转换到“uint32_t”，可能丢失数据
+F:\Vulkan PBR\Codes\MyVulkan.cpp(570,83): warning C4267: “=”: 从“size_t”转换到“uint32_t”，可能丢失数据
+  Node.cpp
+  Scene.cpp
+  main.cpp
+  正在生成代码...
   Codes.vcxproj -> F:\Vulkan PBR\Codes\x64\Debug\Codes.exe

@@ -83,6 +83,7 @@ void UniformInputsBindings::Init() {
 	InitUniformInput(10, VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 	InitUniformInput(11, VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 	InitUniformInput(12, VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+	InitUniformInput(13, VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 
 	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -530,7 +531,7 @@ void SetColorAttachmentCount(PipelineStateObject*inPSO, int count) {
 		inPSO->mColorBlendAttachmentStates[i].alphaBlendOp = VK_BLEND_OP_ADD;
 	}
 }
-void CreateGraphicPipeline(PipelineStateObject* inPSO, int inVertexDataSize, GPUProgram* inGPUProgram, bool inEnableDepthTest, bool inEnableDepthWrite, VkFrontFace inVkFrontFace,VkPrimitiveTopology inVkPrimitiveTopology) {
+void CreateGraphicPipeline(PipelineStateObject* inPSO, int inVertexDataSize, GPUProgram* inGPUProgram, bool inEnableDepthTest, bool inEnableDepthWrite, VkFrontFace inVkFrontFace,VkPrimitiveTopology inVkPrimitiveTopology,VkCullModeFlags inCullMode) {
 	VkVertexInputBindingDescription bindingDescription = {};
 	bindingDescription.binding = 0;
 	bindingDescription.stride = inVertexDataSize;
@@ -598,7 +599,7 @@ void CreateGraphicPipeline(PipelineStateObject* inPSO, int inVertexDataSize, GPU
 	pipelineRasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
 	pipelineRasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
 	pipelineRasterizationStateCreateInfo.lineWidth = 1.0f;
-	pipelineRasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+	pipelineRasterizationStateCreateInfo.cullMode = inCullMode;
 	pipelineRasterizationStateCreateInfo.frontFace = inVkFrontFace;
 	pipelineRasterizationStateCreateInfo.depthBiasEnable = VK_TRUE;
 	pipelineRasterizationStateCreateInfo.depthBiasConstantFactor = 0.0f;
@@ -974,9 +975,9 @@ void InitSwapChain() {
 			break;
 		}
 	}
-	VkPresentModeKHR presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+	VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
 	for (const auto& availablePresentMode : sGlobalConfig.mPresentModes) {
-		if (availablePresentMode == VK_PRESENT_MODE_FIFO_KHR) {
+		if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
 			presentMode = availablePresentMode;
 			break;
 		}

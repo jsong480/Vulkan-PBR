@@ -1,7 +1,23 @@
 #include <windows.h>
+#include <windowsx.h>
+#include <cstdio>
 #include "MyVulkan.h"
 #include "Scene.h"
 #pragma comment(lib,"winmm.lib")
+
+static HWND gHWND = nullptr;
+static float gFPS = 0.0f;
+static void UpdateTitle() {
+	char buf[256];
+	sprintf_s(buf, "Vulkan PBR | %s | SSAO:%s Bloom:%s Lights:%s FXAA:%s | FPS:%.1f | 1-5 toggle",
+		IsDeferredEnabled() ? "Deferred" : "Forward",
+		IsSSAOEnabled() ? "ON" : "OFF",
+		IsBloomEnabled() ? "ON" : "OFF",
+		IsPointLightsEnabled() ? "ON" : "OFF",
+		IsFXAAEnabled() ? "ON" : "OFF",
+		gFPS);
+	SetWindowTextA(gHWND, buf);
+}
 float GetFrameTime() {
 	static unsigned long lastTime = 0, timeSinceComputerStart = 0;
 	timeSinceComputerStart = timeGetTime();
@@ -28,6 +44,22 @@ unsigned char* LoadFileContent(const char* path, int& filesize) {
 	}
 	return fileContent;
 }
+static bool gMouseCaptured = false;
+static void CaptureMouse(HWND hwnd) {
+	gMouseCaptured = true;
+	RECT r;
+	GetClientRect(hwnd, &r);
+	POINT center = { (r.right) / 2, (r.bottom) / 2 };
+	ClientToScreen(hwnd, &center);
+	SetCursorPos(center.x, center.y);
+	ShowCursor(FALSE);
+	SetCapture(hwnd);
+}
+static void ReleaseMouse() {
+	gMouseCaptured = false;
+	ShowCursor(TRUE);
+	ReleaseCapture();
+}
 LRESULT CALLBACK VulkanWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	switch (message) {
 	case WM_SIZE: {
@@ -36,6 +68,37 @@ LRESULT CALLBACK VulkanWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 		OnViewportChanged(rect.right - rect.left, rect.bottom - rect.top);
 	}
 	break;
+	case WM_KEYDOWN:
+		if (wParam == '1') { ToggleSSAO(); UpdateTitle(); }
+		if (wParam == '2') { ToggleBloom(); UpdateTitle(); }
+		if (wParam == '3') { ToggleDeferred(); UpdateTitle(); }
+		if (wParam == '4') { TogglePointLights(); UpdateTitle(); }
+		if (wParam == '5') { ToggleFXAA(); UpdateTitle(); }
+		if (wParam == VK_ESCAPE && gMouseCaptured) { ReleaseMouse(); }
+		break;
+	case WM_LBUTTONDOWN:
+		if (!gMouseCaptured) { CaptureMouse(hwnd); }
+		break;
+	case WM_MOUSEMOVE:
+		if (gMouseCaptured) {
+			RECT r;
+			GetClientRect(hwnd, &r);
+			POINT center = { r.right / 2, r.bottom / 2 };
+			POINT screenCenter = center;
+			ClientToScreen(hwnd, &screenCenter);
+			int mx = GET_X_LPARAM(lParam);
+			int my = GET_Y_LPARAM(lParam);
+			float dx = float(mx - center.x);
+			float dy = float(my - center.y);
+			if (dx != 0.0f || dy != 0.0f) {
+				SetMouseDelta(dx, dy);
+				SetCursorPos(screenCenter.x, screenCenter.y);
+			}
+		}
+		break;
+	case WM_KILLFOCUS:
+		if (gMouseCaptured) { ReleaseMouse(); }
+		break;
 	case WM_CLOSE:
 		PostQuitMessage(0);
 		break;
@@ -62,12 +125,16 @@ INT WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, false);
 	HWND hwnd = CreateWindowEx(NULL, L"BattleFireWindow", L"Vulkan Render Window", WS_OVERLAPPEDWINDOW,
 		200, 200, rect.right - rect.left, rect.bottom - rect.top, NULL, NULL, hInstance, NULL);
+	gHWND = hwnd;
 	GetGlobalConfig().mPreferedSampleCount = VK_SAMPLE_COUNT_1_BIT;
 	InitVulkan(hwnd, 1280, 720);
 	InitScene();
+	UpdateTitle();
 	ShowWindow(hwnd, SW_SHOW);
 	UpdateWindow(hwnd);
 	MSG msg;
+	int frameCount = 0;
+	DWORD lastFPSTime = timeGetTime();
 	while (true) {
 		if (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
 			if (msg.message == WM_QUIT) {
@@ -77,6 +144,14 @@ INT WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			DispatchMessage(&msg);
 		}
 		RenderOneFrame();
+		frameCount++;
+		DWORD now = timeGetTime();
+		if (now - lastFPSTime >= 1000) {
+			gFPS = frameCount * 1000.0f / float(now - lastFPSTime);
+			frameCount = 0;
+			lastFPSTime = now;
+			UpdateTitle();
+		}
 	}
 	//OnQuit();
 	return 0;

@@ -12,6 +12,7 @@ Material::Material(const char* inVSPath, const char* inFSPath) {
 	mbEnableDepthTest = true;
 	mbEnableDepthWrite = true;
 	mFrontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	mCullMode = VK_CULL_MODE_BACK_BIT;
 	mPipelineStateObject = new PipelineStateObject;
 	mbNeedUpdatePSO = true;
 	mVec4s = new Vec4UniformBufferData(4096);
@@ -39,7 +40,7 @@ void Material::Active(VkCommandBuffer inCommandBuffer, int inVertexDataSize) {
 	}
 	if (mbNeedUpdatePSO) {
 		mbNeedUpdatePSO = false;
-		CreateGraphicPipeline(mPipelineStateObject,inVertexDataSize,mGPUProgram,mbEnableDepthTest,mbEnableDepthWrite,mFrontFace, mPrimitiveTopology);
+		CreateGraphicPipeline(mPipelineStateObject,inVertexDataSize,mGPUProgram,mbEnableDepthTest,mbEnableDepthWrite,mFrontFace, mPrimitiveTopology, mCullMode);
 	}
 	for (int i = 0; i < mWriteDescriptor.size(); ++i) {
 		mWriteDescriptor[i].dstSet = mDescriptorSet;
@@ -53,6 +54,18 @@ void Material::SetTexture(int inBindingPoint, VkImageView inVkImageView, VkSampl
 	if (inVkSampler == nullptr) {
 		inVkSampler = mDefaultSampler;
 	}
+	for (VkWriteDescriptorSet& write : mWriteDescriptor) {
+		if (write.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER && write.dstBinding == inBindingPoint) {
+			VkDescriptorImageInfo* imageInfo = const_cast<VkDescriptorImageInfo*>(write.pImageInfo);
+			if (imageInfo != nullptr) {
+				imageInfo->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				imageInfo->imageView = inVkImageView;
+				imageInfo->sampler = inVkSampler;
+			}
+			return;
+		}
+	}
+
 	VkDescriptorImageInfo* imageInfo = new VkDescriptorImageInfo;
 	imageInfo->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	imageInfo->imageView = inVkImageView;
@@ -69,6 +82,18 @@ void Material::SetTexture(int inBindingPoint, VkImageView inVkImageView, VkSampl
 	mWriteDescriptor.push_back(descriptorWriter);
 }
 void Material::SetUBO(int inBindingPosition, BufferObject* inUniformBufferObject) {
+	for (VkWriteDescriptorSet& write : mWriteDescriptor) {
+		if (write.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER && write.dstBinding == inBindingPosition) {
+			VkDescriptorBufferInfo* bufferInfo = const_cast<VkDescriptorBufferInfo*>(write.pBufferInfo);
+			if (bufferInfo != nullptr) {
+				bufferInfo->buffer = inUniformBufferObject->mBuffer;
+				bufferInfo->offset = 0;
+				bufferInfo->range = inUniformBufferObject->mSize;
+			}
+			return;
+		}
+	}
+
 	VkDescriptorBufferInfo* bufferInfo = new VkDescriptorBufferInfo;
 	bufferInfo->buffer = inUniformBufferObject->mBuffer;
 	bufferInfo->offset = 0;

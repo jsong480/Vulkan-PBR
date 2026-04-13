@@ -149,7 +149,7 @@ void BufferSubData(VkBuffer buffer, VkBufferUsageFlags usage, const  void* data,
 VkDescriptorPool InitDescriptorPool();
 VkDescriptorSet InitDescriptorSet(VkDescriptorPool inVkDescriptorPool);
 void SetColorAttachmentCount(PipelineStateObject* inPSO, int count);
-void CreateGraphicPipeline(PipelineStateObject* inPSO, int inVertexDataSize,GPUProgram*inGPUProgram, bool inEnableDepthTest=true,bool inEnableDepthWrite=true,VkFrontFace inVkFrontFace=VK_FRONT_FACE_COUNTER_CLOCKWISE,VkPrimitiveTopology inVkPrimitiveTopology= VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+void CreateGraphicPipeline(PipelineStateObject* inPSO, int inVertexDataSize,GPUProgram*inGPUProgram, bool inEnableDepthTest=true,bool inEnableDepthWrite=true,VkFrontFace inVkFrontFace=VK_FRONT_FACE_COUNTER_CLOCKWISE,VkPrimitiveTopology inVkPrimitiveTopology= VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,VkCullModeFlags inCullMode=VK_CULL_MODE_BACK_BIT);
 void SetDynamicState(PipelineStateObject* inPipelineStateObject, VkCommandBuffer commandbuffer);
 void MapMemory(VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags, void** ppData);
 void UnmapMemory(VkDeviceMemory memory);

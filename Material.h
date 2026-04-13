@@ -14,6 +14,7 @@ public:
 	bool mbEnableDepthTest;
 	bool mbEnableDepthWrite;
 	VkFrontFace mFrontFace;
+	VkCullModeFlags mCullMode;
 	bool mbNeedUpdatePSO;
 	Material(const char *inVSPath,const char *inFSPath);
 	void SetFrontFace(VkFrontFace inVkFrontFace);

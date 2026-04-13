@@ -5,12 +5,17 @@ layout(location=2)in vec3 V_WorldPosition;
 layout(location=0)out vec4 OutColor0;
 layout(binding=3)uniform XXX{
     vec4 CameraWorldPosition;
-    vec4 Reserved[1023];
+    mat4 LightVP;
+    vec4 _pad5;vec4 _pad6;vec4 _pad7;vec4 _pad8;
+    vec4 PointLightParams;
+    vec4 PointLights[16];
+    vec4 Reserved[998];
 };
 layout(binding=4)uniform samplerCube U_SkyBox;
 layout(binding=5)uniform samplerCube U_PrefilteredColor;
 layout(binding=6)uniform samplerCube U_DiffuseIrradiance;
 layout(binding=7)uniform sampler2D U_BRDFLUT;
+layout(binding=13)uniform sampler2D U_ShadowMap;
 const float PI=3.141592;
 vec3 F(vec3 inF0,vec3 inH,vec3 inV){
     float HDotV=max(0.0,dot(inH,inV));
@@ -32,6 +37,24 @@ float Geometry(float inNDotX,float inRoughness){
     float k=pow(inRoughness+1.0,2.0)/8.0;
     return inNDotX/(inNDotX*(1.0-k)+k);
 }
+float CalcShadow(vec3 inWorldPos,vec3 inN,vec3 inL){
+    vec4 lightSpacePos=LightVP*vec4(inWorldPos,1.0);
+    vec3 projCoords=lightSpacePos.xyz/lightSpacePos.w;
+    projCoords.x=projCoords.x*0.5+0.5;
+    projCoords.y=projCoords.y*(-0.5)+0.5;
+    if(projCoords.z>1.0||projCoords.x<0.0||projCoords.x>1.0||projCoords.y<0.0||projCoords.y>1.0)
+        return 0.0;
+    float bias=max(0.005*(1.0-dot(inN,inL)),0.001);
+    float shadow=0.0;
+    vec2 texelSize=1.0/textureSize(U_ShadowMap,0);
+    for(int x=-1;x<=1;x++){
+        for(int y=-1;y<=1;y++){
+            float depth=texture(U_ShadowMap,projCoords.xy+vec2(x,y)*texelSize).r;
+            shadow+=projCoords.z-bias>depth?1.0:0.0;
+        }
+    }
+    return shadow/9.0;
+}
 void main(){
     vec3 L=vec3(1.0,1.0,1.0);
     vec3 N=normalize(V_Normal);
@@ -46,6 +69,7 @@ void main(){
     float roughness=0.8;
     float metallic=0.0;
     F0=mix(F0,albedo,metallic);
+    float shadow=CalcShadow(V_WorldPosition,N,normalize(L));
     {
         vec3 Ks=F(F0,H,V);
         vec3 Kd=vec3(1.0)-Ks;
@@ -56,7 +80,29 @@ void main(){
         float G=Gl*Gv;
         vec3 specularColor=(D*Ks*G)/(4.0*NDotV*NDotL+0.0001);
         vec3 diffuseColor=Kd*albedo/PI;
-        FinalColor+=(diffuseColor+specularColor)*vec3(1.0)*2.0*NDotL;
+        FinalColor+=(1.0-shadow)*(diffuseColor+specularColor)*vec3(1.0)*2.0*NDotL;
+    }
+    int numPL=int(PointLightParams.x);
+    for(int i=0;i<8&&i<numPL;i++){
+        vec3 plPos=PointLights[i*2].xyz;
+        float plRadius=PointLights[i*2].w;
+        vec3 plColor=PointLights[i*2+1].xyz;
+        float plIntensity=PointLights[i*2+1].w;
+        vec3 Lp=plPos-V_WorldPosition;
+        float dist=length(Lp);
+        Lp=normalize(Lp);
+        float atten=clamp(1.0-dist/plRadius,0.0,1.0);
+        atten*=atten;
+        vec3 Hp=normalize(Lp+V);
+        float NDotLp=max(dot(N,Lp),0.0);
+        vec3 Ksp=F(F0,Hp,V);
+        vec3 Kdp=(vec3(1.0)-Ksp)*(1.0-metallic);
+        float Dp=NDF(N,Hp,roughness);
+        float Glp=Geometry(NDotLp,roughness);
+        float Gvp=Geometry(NDotV,roughness);
+        vec3 specP=(Dp*Ksp*Glp*Gvp)/(4.0*NDotV*NDotLp+0.0001);
+        vec3 diffP=Kdp*albedo/PI;
+        FinalColor+=(diffP+specP)*plColor*plIntensity*atten*NDotLp;
     }
     {
         vec3 Ks=FRoughness(F0,NDotV,roughness);
@@ -67,7 +113,8 @@ void main(){
         vec2 brdf=texture(U_BRDFLUT,vec2(NDotV,roughness)).rg;
         vec3 prefilteredColor=textureLod(U_PrefilteredColor,R,roughness*4.0).rgb;
         vec3 ambientSpecular=prefilteredColor*(F0*brdf.x+brdf.y);
-        FinalColor+=ambientDiffuse+ambientSpecular;
+        float ambientShadow=1.0-shadow*0.3;
+        FinalColor+=(ambientDiffuse+ambientSpecular)*ambientShadow;
     }
     OutColor0=vec4(FinalColor,1.0);
 }
