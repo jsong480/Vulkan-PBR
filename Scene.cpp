@@ -7,7 +7,7 @@
 #include "Captures.h"
 #include <cstdlib>
 
-
+// 场景与渲染主流程：离屏 Pass、延迟/前向、后处理与最终 Present
 
 static glm::mat4 gProjectionMatrix;
 static Camera gMainCamera;
@@ -300,7 +300,7 @@ static void RecreateBloomFBOs() {
 }
 
 static void RecreateHDRFBO() {
-	// STEP2_BEGIN: HDR render target (offscreen, high precision color)
+	// HDR 主颜色缓冲（线性高动态）；LDR 供 tonemap 与 FXAA 采样
 	if (gHDRFBO != nullptr) {
 		delete gHDRFBO;
 		gHDRFBO = nullptr;
@@ -326,7 +326,6 @@ static void RecreateHDRFBO() {
 	if (gGroundNode != nullptr) {
 		gGroundNode->mMaterial->mPipelineStateObject->mRenderPass = gHDRFBO->mRenderPass;
 	}
-	// LDR FBO for ToneMapping output (FXAA reads from this)
 	if (gLDRFBO != nullptr) { delete gLDRFBO; gLDRFBO = nullptr; }
 	gLDRFBO = new FrameBufferEx;
 	gLDRFBO->SetSize(uint32_t(gViewportWidth), uint32_t(gViewportHeight));
@@ -344,21 +343,13 @@ static void RecreateHDRFBO() {
 		gFXAANode->mMaterial->SetVec4(1, gFXAAEnabled ? 1.0f : 0.0f, 1.0f / float(gViewportWidth), 1.0f / float(gViewportHeight), 0.0f);
 		ApplyViewportToMaterial(gFXAANode->mMaterial, false);
 	}
-	// STEP2_END
 
-	// STEP11_BEGIN: Recreate G-Buffer FBO (deferred rendering)
 	RecreateGBufferFBO();
-	// STEP11_END
-
-	// STEP9_BEGIN: Recreate bloom FBOs (depend on HDR FBO)
 	RecreateBloomFBOs();
-	// STEP9_END
-
-	// STEP10_BEGIN: Recreate SSAO FBOs (depend on depth buffer)
 	RecreateSSAOFBOs();
-	// STEP10_END
 }
 
+// 窗口尺寸变化：更新投影矩阵、重建 Swapchain 与所有依赖分辨率的离屏 FBO
 void OnViewportChanged(int inWidth, int inHeight) {
 	if (inWidth <= 0 || inHeight <= 0) {
 		return;
@@ -409,22 +400,22 @@ void OnViewportChanged(int inWidth, int inHeight) {
 	}
 }
 
+// 加载 IBL、创建场景节点、后处理与延迟渲染所用材质与 FBO
 void InitScene() {
 	GlobalConfig& globalConfig = GetGlobalConfig();
 	gViewportWidth = globalConfig.mViewportWidth;
 	gViewportHeight = globalConfig.mViewportHeight;
 	gProjectionMatrix = glm::perspectiveRH_ZO((45.0f * 3.14f / 180.0f), float(gViewportWidth) / float(gViewportHeight), 0.1f, 1000.0f);
 
-	// STEP4_BEGIN: IBL preprocessing chain (required by PBR IBL)
+	// 启动时 IBL 预计算：环境 cubemap、irradiance、prefilter、BRDF LUT
 	gSkyBoxCubeMap = LoadHDRICubeMapFromFile("Res/Image/1.hdr", 512, "Res/SkyBox.vsb", "Res/Texture2D2CubeMap.fsb");
 	gDiffuseIrradianceCubeMap = CaptureDiffuseIrradiance(gSkyBoxCubeMap, 32, "Res/SkyBox.vsb", "Res/CaptureDiffuseIrradiance.fsb");
 	gPrefilteredColorCubeMap = CapturePrefilteredColor(gSkyBoxCubeMap, 128, "Res/SkyBox.vsb", "Res/CapturePrefilteredColor.fsb");
 	gBRDFLUTTexture = GenerateBRDF(512, "Res/FSQ.vsb", "Res/GenerateBRDF.fsb");
-	// STEP4_END
 
 	gMainCamera.InitFPS(glm::vec3(0.0f, 1.0f, -6.0f), 0.0f, -5.0f);
 
-	// STEP8_BEGIN: Shadow map setup
+	// 方向光 Shadow map：正交投影 + 深度-only FBO
 	glm::vec3 lightDir = glm::normalize(glm::vec3(1.0f, 1.0f, 1.0f));
 	glm::vec3 lightPos = lightDir * 15.0f;
 	gLightCamera.mPosition = lightPos;
@@ -436,11 +427,9 @@ void InitScene() {
 	gShadowFBO->SetSize(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 	gShadowFBO->AttachDepthBuffer();
 	gShadowFBO->Finish();
-	// STEP8_END
 
 	RecreateHDRFBO();
 
-	// STEP3_BEGIN: Skybox node
 	gSkyBoxNode = new Node;
 	gSkyBoxNode->mModelMatrix = glm::mat4(1.0f);
 	gSkyBoxNode->mStaticMeshComponent = new StaticMeshComponent;
@@ -453,9 +442,7 @@ void InitScene() {
 	gSkyBoxNode->mMaterial->mPipelineStateObject->mRenderPass = gHDRFBO->mRenderPass;
 	gSkyBoxNode->mMaterial->mPipelineStateObject->mSampleCount = VK_SAMPLE_COUNT_1_BIT;
 	ApplyViewportToMaterial(gSkyBoxNode->mMaterial, true);
-	// STEP3_END
 
-	// STEP5_BEGIN: Simple PBR sphere (constant material, IBL-driven)
 	gSphereNode = new Node;
 	gSphereNode->mModelMatrix = glm::mat4(1.0f);
 	gSphereNode->mStaticMeshComponent = new StaticMeshComponent;
@@ -469,9 +456,7 @@ void InitScene() {
 	gSphereNode->mMaterial->mPipelineStateObject->mRenderPass = gHDRFBO->mRenderPass;
 	gSphereNode->mMaterial->mPipelineStateObject->mSampleCount = VK_SAMPLE_COUNT_1_BIT;
 	ApplyViewportToMaterial(gSphereNode->mMaterial, true);
-	// STEP5_END
 
-	// STEP6_BEGIN: Full PBR helmet (all texture channels)
 	Texture* albedo = LoadTextureFromFile("Res/Image/DamagedHelmet/Albedo.jpg");
 	Texture* normal = LoadTextureFromFile("Res/Image/DamagedHelmet/Normal.jpg");
 	Texture* metallic = LoadTextureFromFile("Res/Image/DamagedHelmet/Metallic.png");
@@ -500,9 +485,7 @@ void InitScene() {
 	gHelmetNode->mMaterial->mPipelineStateObject->mRenderPass = gHDRFBO->mRenderPass;
 	gHelmetNode->mMaterial->mPipelineStateObject->mSampleCount = VK_SAMPLE_COUNT_1_BIT;
 	ApplyViewportToMaterial(gHelmetNode->mMaterial, true);
-	// STEP6_END
 
-	// STEP6B_BEGIN: Gun model (PBR textured, no emissive)
 	Texture* gunAlbedo = LoadTextureFromFile("Res/Image/Gun/albedo.png");
 	Texture* gunNormal = LoadTextureFromFile("Res/Image/Gun/normal.png");
 	Texture* gunMetallic = LoadTextureFromFile("Res/Image/Gun/metallic.png");
@@ -535,9 +518,7 @@ void InitScene() {
 	gGunNode->mMaterial->mPipelineStateObject->mRenderPass = gHDRFBO->mRenderPass;
 	gGunNode->mMaterial->mPipelineStateObject->mSampleCount = VK_SAMPLE_COUNT_1_BIT;
 	ApplyViewportToMaterial(gGunNode->mMaterial, true);
-	// STEP6B_END
 
-	// STEP7_BEGIN: Ground plane (for shadow receiving)
 	gGroundNode = new Node;
 	gGroundNode->mModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, 0.0f));
 	gGroundNode->mStaticMeshComponent = new GroundMeshComponent;
@@ -553,9 +534,8 @@ void InitScene() {
 	gGroundNode->mMaterial->mPipelineStateObject->mRenderPass = gHDRFBO->mRenderPass;
 	gGroundNode->mMaterial->mPipelineStateObject->mSampleCount = VK_SAMPLE_COUNT_1_BIT;
 	ApplyViewportToMaterial(gGroundNode->mMaterial, true);
-	// STEP7_END
 
-	// STEP8_BEGIN: Shadow pass nodes (share meshes, use shadow shader)
+	// Shadow pass：复用网格，仅输出深度
 	gShadowHelmetNode = new Node;
 	gShadowHelmetNode->mModelMatrix = gHelmetNode->mModelMatrix;
 	gShadowHelmetNode->mStaticMeshComponent = gHelmetNode->mStaticMeshComponent;
@@ -598,9 +578,7 @@ void InitScene() {
 	SetPointLightsOnMaterial(gHelmetNode->mMaterial);
 	SetPointLightsOnMaterial(gGunNode->mMaterial);
 	SetPointLightsOnMaterial(gGroundNode->mMaterial);
-	// STEP8_END
 
-	// STEP9_BEGIN: Bloom nodes (brightness extract + gaussian blur)
 	uint32_t bloomW = uint32_t(gViewportWidth) / 2;
 	uint32_t bloomH = uint32_t(gViewportHeight) / 2;
 	if (bloomW == 0) bloomW = 1;
@@ -647,9 +625,7 @@ void InitScene() {
 	gVBlurNode->mMaterial->mPipelineStateObject->mRenderPass = gBloomVBlurFBO->mRenderPass;
 	gVBlurNode->mMaterial->mPipelineStateObject->mSampleCount = VK_SAMPLE_COUNT_1_BIT;
 	ApplyBloomViewport(gVBlurNode->mMaterial, bloomW, bloomH);
-	// STEP9_END
 
-	// STEP10_BEGIN: SSAO (noise texture, kernel, nodes)
 	srand(42);
 	float ssaoKernel[32 * 4];
 	for (int i = 0; i < 32; i++) {
@@ -711,9 +687,7 @@ void InitScene() {
 	gSSAOBlurNode->mMaterial->mPipelineStateObject->mRenderPass = gSSAOBlurFBO->mRenderPass;
 	gSSAOBlurNode->mMaterial->mPipelineStateObject->mSampleCount = VK_SAMPLE_COUNT_1_BIT;
 	ApplyViewportToMaterial(gSSAOBlurNode->mMaterial, false);
-	// STEP10_END
 
-	// STEP11_BEGIN: Deferred rendering nodes (G-Buffer + lighting)
 	gGBufferHelmetNode = new Node;
 	gGBufferHelmetNode->mModelMatrix = gHelmetNode->mModelMatrix;
 	gGBufferHelmetNode->mStaticMeshComponent = gHelmetNode->mStaticMeshComponent;
@@ -778,9 +752,7 @@ void InitScene() {
 	ApplyViewportToMaterial(gDeferredLightingNode->mMaterial, false);
 	SetLightVPOnMaterial(gDeferredLightingNode->mMaterial, gLightVP);
 	SetPointLightsOnMaterial(gDeferredLightingNode->mMaterial);
-	// STEP11_END
 
-	// STEP2_BEGIN: Fullscreen tone mapping pass
 	gToneMappingNode = new Node;
 	gToneMappingNode->mModelMatrix = glm::mat4(1.0f);
 	gToneMappingNode->mStaticMeshComponent = new FullScreenQuadMeshComponent;
@@ -795,9 +767,7 @@ void InitScene() {
 	gToneMappingNode->mMaterial->mPipelineStateObject->mRenderPass = gLDRFBO->mRenderPass;
 	gToneMappingNode->mMaterial->mPipelineStateObject->mSampleCount = VK_SAMPLE_COUNT_1_BIT;
 	ApplyViewportToMaterial(gToneMappingNode->mMaterial, false);
-	// STEP2_END
 
-	// STEP12_BEGIN: FXAA pass
 	gFXAANode = new Node;
 	gFXAANode->mModelMatrix = glm::mat4(1.0f);
 	gFXAANode->mStaticMeshComponent = new FullScreenQuadMeshComponent;
@@ -811,7 +781,6 @@ void InitScene() {
 	gFXAANode->mMaterial->mPipelineStateObject->mRenderPass = globalConfig.mSystemRenderPass;
 	gFXAANode->mMaterial->mPipelineStateObject->mSampleCount = VK_SAMPLE_COUNT_1_BIT;
 	ApplyViewportToMaterial(gFXAANode->mMaterial, false);
-	// STEP12_END
 }
 
 void RenderOneFrame() {
@@ -826,7 +795,7 @@ void RenderOneFrame() {
 	bool kShift = (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
 	gMainCamera.MoveFPS(frameTime, kW, kS, kA, kD, kSpace, kShift, 5.0f);
 
-	// STEP8_BEGIN: Pass 0 -> render shadow map from light's perspective
+	// Pass 0：灯光视角 Shadow map
 	VkCommandBuffer commandBuffer = gShadowFBO->BeginRendering();
 	gShadowHelmetNode->mModelMatrix = gHelmetNode->mModelMatrix;
 	gShadowHelmetNode->Draw(commandBuffer, gLightProjection, gLightCamera);
@@ -835,10 +804,9 @@ void RenderOneFrame() {
 	gShadowGroundNode->mModelMatrix = gGroundNode->mModelMatrix;
 	gShadowGroundNode->Draw(commandBuffer, gLightProjection, gLightCamera);
 	vkCmdEndRenderPass(commandBuffer);
-	// STEP8_END
 
 	if (gDeferredEnabled) {
-		// STEP11_BEGIN: G-Buffer pass -> write geometry data to MRT
+		// 延迟：G-Buffer MRT，再全屏 deferred lighting → HDR
 		commandBuffer = gGBufferFBO->BeginRendering(commandBuffer);
 		gGBufferHelmetNode->mModelMatrix = gHelmetNode->mModelMatrix;
 		gGBufferHelmetNode->Draw(commandBuffer, gProjectionMatrix, gMainCamera);
@@ -858,9 +826,8 @@ void RenderOneFrame() {
 		commandBuffer = gHDRFBO->BeginRendering(commandBuffer);
 		gDeferredLightingNode->Draw(commandBuffer, gProjectionMatrix, gMainCamera);
 		vkCmdEndRenderPass(commandBuffer);
-		// STEP11_END
 	} else {
-		// STEP2_BEGIN: Pass 1 -> render scene to HDR offscreen target (forward)
+		// 前向：天空盒 + 物体 → HDR
 		commandBuffer = gHDRFBO->BeginRendering(commandBuffer);
 		gSkyBoxNode->mModelMatrix = glm::translate(glm::mat4(1.0f), gMainCamera.mPosition);
 		gSkyBoxNode->Draw(commandBuffer, gProjectionMatrix, gMainCamera);
@@ -868,10 +835,9 @@ void RenderOneFrame() {
 		gGunNode->Draw(commandBuffer, gProjectionMatrix, gMainCamera);
 		gGroundNode->Draw(commandBuffer, gProjectionMatrix, gMainCamera);
 		vkCmdEndRenderPass(commandBuffer);
-		// STEP2_END
 	}
 
-	// STEP10_BEGIN: SSAO passes (compute -> blur)
+	// SSAO 与 blur（采样深度来自 G-Buffer 或 HDR）
 	commandBuffer = gSSAOFBO->BeginRendering(commandBuffer);
 	if (gSSAOEnabled) gSSAONode->Draw(commandBuffer, gProjectionMatrix, gMainCamera);
 	vkCmdEndRenderPass(commandBuffer);
@@ -879,9 +845,8 @@ void RenderOneFrame() {
 	commandBuffer = gSSAOBlurFBO->BeginRendering(commandBuffer);
 	if (gSSAOEnabled) gSSAOBlurNode->Draw(commandBuffer, gProjectionMatrix, gMainCamera);
 	vkCmdEndRenderPass(commandBuffer);
-	// STEP10_END
 
-	// STEP9_BEGIN: Bloom passes (brightness extract -> horizontal blur -> vertical blur)
+	// Bloom：亮部提取 + 分离高斯模糊
 	commandBuffer = gBloomBrightFBO->BeginRendering(commandBuffer);
 	if (gBloomEnabled) gBrightnessNode->Draw(commandBuffer, gProjectionMatrix, gMainCamera);
 	vkCmdEndRenderPass(commandBuffer);
@@ -893,20 +858,17 @@ void RenderOneFrame() {
 	commandBuffer = gBloomVBlurFBO->BeginRendering(commandBuffer);
 	if (gBloomEnabled) gVBlurNode->Draw(commandBuffer, gProjectionMatrix, gMainCamera);
 	vkCmdEndRenderPass(commandBuffer);
-	// STEP9_END
 
-	// STEP2_BEGIN: Pass final -> tone map HDR + bloom to LDR FBO
+	// Tonemap：HDR + Bloom + SSAO → LDR
 	commandBuffer = gLDRFBO->BeginRendering(commandBuffer);
 	gToneMappingNode->Draw(commandBuffer, gProjectionMatrix, gMainCamera);
 	vkCmdEndRenderPass(commandBuffer);
-	// STEP2_END
 
-	// STEP12_BEGIN: FXAA pass -> LDR FBO to swapchain
+	// FXAA：LDR → Swapchain（最后一道）
 	gFXAANode->mMaterial->SetTexture(4, gLDRFBO->mAttachments[0]->mImageView);
 	gFXAANode->mMaterial->SetVec4(1, gFXAAEnabled ? 1.0f : 0.0f, 1.0f / float(gViewportWidth), 1.0f / float(gViewportHeight), 0.0f);
 	BeginRendering(commandBuffer);
 	gFXAANode->Draw(commandBuffer, gProjectionMatrix, gMainCamera);
 	EndRendering();
 	SwapBuffers();
-	// STEP12_END
 }

@@ -1,3 +1,4 @@
+// Vulkan 封装：Instance/Device、Swapchain、命令缓冲、纹理与 Graphics Pipeline
 #include "MyVulkan.h"
 #include "Utils.h"
 #include "Mesh.h"
@@ -69,6 +70,7 @@ void Vec4UniformBufferData::UpdateGPUData() {
 	mUBO->Write(mData, sizeof(mData));
 }
 
+// 与 shader 中 binding 对应：0~2 mat4、3 vec4 block、4~13 纹理
 void UniformInputsBindings::Init() {
 	InitUniformInput(0, VK_SHADER_STAGE_VERTEX_BIT);
 	InitUniformInput(1, VK_SHADER_STAGE_VERTEX_BIT);
@@ -93,7 +95,7 @@ void UniformInputsBindings::Init() {
 		printf("failed to create descriptor set layout!\n");
 	}
 }
-void UniformInputsBindings::InitUniformInput(int inBindingPoint, VkShaderStageFlags inVkShaderStageFlags, VkDescriptorType inVkDescriptorType /* = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER */) {
+void UniformInputsBindings::InitUniformInput(int inBindingPoint, VkShaderStageFlags inVkShaderStageFlags, VkDescriptorType inVkDescriptorType) {
 	VkDescriptorSetLayoutBinding descriptorSetLayoutBinding = {};
 	descriptorSetLayoutBinding.binding = inBindingPoint;
 	descriptorSetLayoutBinding.descriptorType = inVkDescriptorType;
@@ -338,49 +340,6 @@ void GenImageCube(Texture* texture, uint32_t w, uint32_t h, VkImageUsageFlags us
 	vkAllocateMemory(sGlobalConfig.mLogicDevice, &mai, nullptr, &texture->mMemory);
 	vkBindImageMemory(sGlobalConfig.mLogicDevice, texture->mImage, texture->mMemory, 0);
 }
-/*void SubmitImageCube(Texture* texture, int width, int height, const void* pixel) {
-	VkDeviceSize offset_unit = width * height;
-	if (texture->mFormat == VK_FORMAT_R8G8B8A8_UNORM) {
-		offset_unit *= 4;
-	}
-	int imagesize = offset_unit * 6;
-	VkBuffer tempbuffer;
-	VkDeviceMemory tempmemory;
-	xGenBuffer(tempbuffer, tempmemory, imagesize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-	void* data;
-	vkMapMemory(GetVulkanDevice(), tempmemory, 0, imagesize, 0, &data);
-	memcpy(data, pixel, imagesize);
-	vkUnmapMemory(GetVulkanDevice(), tempmemory);
-
-	std::vector<VkBufferImageCopy> copies;
-	for (uint32_t face = 0; face < 6; ++face) {
-		VkBufferImageCopy copy = {};
-		copy.imageSubresource.aspectMask = texture->mImageAspectFlag;
-		copy.imageSubresource.mipLevel = 0;
-		copy.imageSubresource.baseArrayLayer = face;
-		copy.imageSubresource.layerCount = 1;
-
-		copy.imageOffset = { 0,0,0 };
-		copy.imageExtent = { uint32_t(width),uint32_t(height),1 };
-		copy.bufferOffset = offset_unit * face;
-		copies.push_back(copy);
-	}
-	VkCommandBuffer commandbuffer;
-	xBeginOneTimeCommandBuffer(&commandbuffer);
-	VkImageSubresourceRange subresourcerange = { texture->mImageAspectFlag,0,1,0,6 };
-	xSetImageLayout(commandbuffer, texture->mImage, VK_IMAGE_LAYOUT_UNDEFINED,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourcerange);
-
-	vkCmdCopyBufferToImage(commandbuffer, tempbuffer, texture->mImage,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 6, copies.data());
-	xSetImageLayout(commandbuffer, texture->mImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourcerange);
-	xEndOneTimeCommandBuffer(commandbuffer);
-
-	vkDestroyBuffer(GetVulkanDevice(), tempbuffer, nullptr);
-	vkFreeMemory(GetVulkanDevice(), tempmemory, nullptr);
-}*/
 VkImageView GenImageViewCube(VkImage inImage, VkFormat inFormat, VkImageAspectFlags inImageAspectFlags, int mipmap_level) {
 	VkImageView imageView=nullptr;
 	VkImageViewCreateInfo ivci = {};
@@ -647,7 +606,7 @@ void CreateGraphicPipeline(PipelineStateObject* inPSO, int inVertexDataSize, GPU
 		printf("create pipeline fail\n");
 	}
 }
-Texture::Texture(VkFormat inFormat, VkImageAspectFlags inImageAspectFlag /* = VK_IMAGE_ASPECT_COLOR_BIT */) {
+Texture::Texture(VkFormat inFormat, VkImageAspectFlags inImageAspectFlag) {
 	mImage = nullptr;
 	mMemory = nullptr;
 	mImageView = nullptr;
@@ -792,6 +751,7 @@ static void InitPreferedLayers() {
 	}
 	delete[] layers;
 }
+// 创建 VkInstance（启用 validation 与调试扩展）
 static bool InitVulkanInstance() {
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -1219,6 +1179,7 @@ void OnViewportChangedVulkan(int inWidth, int inHeight) {
 	}
 }
 static uint32_t sNextSystemFrameBufferToRender=-1;
+// 获取当前 swapchain 图像索引，用于最终画到屏幕
 VkFramebuffer AquireRenderTarget() {
 	vkAcquireNextImageKHR(sGlobalConfig.mLogicDevice, sGlobalConfig.mSwapChain, std::numeric_limits<uint64_t>::max(), sGlobalConfig.mReadyToRender, VK_NULL_HANDLE, &sNextSystemFrameBufferToRender);
 	return sGlobalConfig.mSystemFrameBuffers[sNextSystemFrameBufferToRender].mFrameBuffer;
@@ -1310,6 +1271,7 @@ VkResult EndOneTimeCommandBuffer(VkCommandBuffer command_buffer) {
 	vkFreeCommandBuffers(sGlobalConfig.mLogicDevice, sGlobalConfig.mCommandPool, 1, &command_buffer);
 	return VK_SUCCESS;
 }
+// 开始渲染到 Swapchain 的 framebuffer（Acquire 已在此完成）
 VkCommandBuffer BeginRendering(VkCommandBuffer cmd) {
 	VkCommandBuffer commandbuffer;
 	if (cmd != nullptr) {
@@ -1344,7 +1306,6 @@ void SetDynamicState(PipelineStateObject*inPipelineStateObject, VkCommandBuffer 
 	vkCmdSetViewport(commandbuffer, 0, 1, &inPipelineStateObject->mViewport);
 	vkCmdSetScissor(commandbuffer, 0, 1, &inPipelineStateObject->mScissor);
 	vkCmdSetDepthBias(commandbuffer, inPipelineStateObject->mDepthConstantFactor, inPipelineStateObject->mDepthClamp, inPipelineStateObject->mDepthSlopeFactor);
-	//vkCmdPushConstants(commandbuffer, inPipelineStateObject->mPipelineLayout, inPipelineStateObject->mPushConstantShaderStage, 0, sizeof(XVector4f) * pipeline->mPushConstantCount, pipeline->mPushConstants);
 }
 void MapMemory(VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags, void** ppData) {
 	vkMapMemory(sGlobalConfig.mLogicDevice, memory, offset, size, flags, ppData);

@@ -1,3 +1,4 @@
+// 相机：轨道观察或 FPS 移动
 #pragma once
 #include "Utils.h"
 class Camera {

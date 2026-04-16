@@ -1,3 +1,4 @@
+// 场景节点：网格 + 材质 + per-object mat4 UBO
 #pragma once
 #include "Mesh.h"
 #include "MyVulkan.h"

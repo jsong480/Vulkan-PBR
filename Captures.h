@@ -1,3 +1,4 @@
+// IBL 预处理：HDRI→cubemap、irradiance、specular prefilter、BRDF LUT 生成
 #pragma once
 #include "Utils.h"
 #include "MyVulkan.h"

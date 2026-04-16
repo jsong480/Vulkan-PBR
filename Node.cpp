@@ -1,10 +1,12 @@
 #include "Node.h"
 #include "Camera.h"
+
 Node::Node() {
 	mStaticMeshComponent = nullptr;
 	mMat4UBOData = new Mat4UniformBufferData(1024);
 }
 
+// 写入 M/V/P 与法线矩阵 UBO，绑定材质并绘制
 void Node::Draw(VkCommandBuffer inCommandBuffer, glm::mat4& inProjectionMatrix, Camera& inCamera) {
 	mMat4UBOData->SetMat4(0, glm::value_ptr(mModelMatrix));
 	mMat4UBOData->SetMat4(1, glm::value_ptr(inCamera.mViewMatrix));

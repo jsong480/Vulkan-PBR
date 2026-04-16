@@ -5,6 +5,7 @@
 #include "Camera.h"
 #include "FrameBuffer.h"
 
+// 将离屏 RT 拷贝到 cubemap 指定面/ mip
 static bool gMatrixInited = false;
 static glm::mat4 gCaptureProjectionMatrix;
 static Camera gCaptureCameras[6];
@@ -73,6 +74,7 @@ void InitMatrices() {
 	gCaptureCameras[4].mViewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
 	gCaptureCameras[5].mViewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
 }
+// 六面渲染 HDRI 到立方体贴图
 void HDRI2CubeMap(const char* inFilePath, Texture* inoutCubeMap, int inCubeMapResolution, const char* inVSFilePath, const char* inFSFilePath) {
 	InitMatrices();
 	Texture*hdriTexture = CreateTextureFromFile(inFilePath);

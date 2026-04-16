@@ -1,3 +1,4 @@
+// 材质：GPUProgram + PSO + DescriptorSet + 大块 vec4 UBO（灯光矩阵等）
 #pragma once
 #include "utils.h"
 #include "MyVulkan.h"

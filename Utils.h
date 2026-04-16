@@ -1,3 +1,4 @@
+// 顶点布局、子网格与通用工具（帧时间、文件读取）
 #pragma once
 extern "C" {
 	#include "stbi/stb_image.h"

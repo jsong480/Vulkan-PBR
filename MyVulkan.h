@@ -1,3 +1,4 @@
+// Vulkan 类型与全局渲染状态封装（Swapchain、PSO、资源创建入口）
 #pragma once
 #define VK_USE_PLATFORM_WIN32_KHR
 #include "vulkan/vulkan.h"

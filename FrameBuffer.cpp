@@ -1,4 +1,5 @@
 #include "FrameBuffer.h"
+
 FrameBufferEx::FrameBufferEx() {
 	mFBO = nullptr;
 	mRenderPass = nullptr;
@@ -43,6 +44,7 @@ void FrameBufferEx::AttachDepthBuffer() {
 	mClearValues.push_back(cv);
 	mDepthBuffer = depth_buffer;
 }
+// 创建 RenderPass（MRT + depth）与 Framebuffer；颜色附件最终 layout 可指定（如 transfer src）
 void FrameBufferEx::Finish(VkImageLayout inColorBufferFinalLayout) {
 	std::vector<VkAttachmentDescription> attachments;
 	std::vector<VkAttachmentReference> colorattachment_refences;
@@ -127,7 +129,7 @@ void FrameBufferEx::SetClearColor(int index, float r, float g, float b, float a)
 void FrameBufferEx::SetClearDepthStencil(float depth, uint32_t stencil) {
 	mClearValues[mDepthBufferIndex].depthStencil = { depth,stencil };
 }
-VkCommandBuffer FrameBufferEx::BeginRendering(VkCommandBuffer commandbuffer /* = nullptr */) {
+VkCommandBuffer FrameBufferEx::BeginRendering(VkCommandBuffer commandbuffer) {
 	VkCommandBuffer cmd;
 	if (commandbuffer != nullptr) {
 		cmd = commandbuffer;

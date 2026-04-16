@@ -1,3 +1,4 @@
+// 对外接口：视口变化、场景初始化、每帧渲染与功能开关
 #pragma once
 void OnViewportChanged(int inWidth, int inHeight);
 void InitScene();

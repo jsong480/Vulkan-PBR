@@ -1,5 +1,6 @@
 #include "Camera.h"
 #include <cmath>
+
 void Camera::Init(glm::vec3 inTargetPosition,float inDistanceFromTarget,glm::vec3 inViewDirection) {
 	inViewDirection=glm::normalize(inViewDirection);
 	mInitialViewDirection = inViewDirection;

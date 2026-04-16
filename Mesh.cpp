@@ -98,6 +98,7 @@ void StaticMeshComponent::Update(VkCommandBuffer inCommandBuffer) {
 		}
 	}
 }
+// 无 submesh 则 Draw，否则按 IBO 分段 DrawIndexed
 void StaticMeshComponent::Draw(VkCommandBuffer inCommandBuffer) {
 	VkBuffer vertexBuffers[] = { mVBO->mBuffer };
 	VkDeviceSize offsets[] = { 0 };

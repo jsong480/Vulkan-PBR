@@ -2,6 +2,7 @@
 
 VkSampler Material::mDefaultSampler = nullptr;
 
+
 Material::Material(const char* inVSPath, const char* inFSPath) {
 	mGPUProgram = new GPUProgram;
 	mGPUProgram->AttachShader(VK_SHADER_STAGE_VERTEX_BIT, inVSPath);
@@ -30,6 +31,7 @@ void Material::EnableDepthTest(bool inEnable) {
 	mbEnableDepthTest = inEnable;
 	mbNeedUpdatePSO = true;
 }
+// 更新 UBO、刷新 descriptor、绑定 pipeline 与 descriptor set
 void Material::Active(VkCommandBuffer inCommandBuffer, int inVertexDataSize) {
 	if (mVec4s->mUBO == nullptr) {
 		mVec4s->UpdateGPUData();
@@ -50,7 +52,7 @@ void Material::Active(VkCommandBuffer inCommandBuffer, int inVertexDataSize) {
 	vkCmdBindPipeline(inCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineStateObject->mPipeline);
 	vkCmdBindDescriptorSets(inCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineStateObject->mPipelineLayout, 0, 1, &mDescriptorSet, 0, nullptr);
 }
-void Material::SetTexture(int inBindingPoint, VkImageView inVkImageView, VkSampler inVkSampler/* =nullptr */) {
+void Material::SetTexture(int inBindingPoint, VkImageView inVkImageView, VkSampler inVkSampler) {
 	if (inVkSampler == nullptr) {
 		inVkSampler = mDefaultSampler;
 	}
@@ -120,6 +122,6 @@ void Material::SetVec4(int inIndex, float x, float y, float z, float w) {
 	v[3] = w;
 	SetVec4(inIndex, v);
 }
-void Material::SetCameraWorldPosition(float inX, float inY, float inZ, float inW /* = 1.0f */) {
+void Material::SetCameraWorldPosition(float inX, float inY, float inZ, float inW) {
 	SetVec4(0, inX, inY, inZ, inW);
 }

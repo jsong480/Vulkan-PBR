@@ -1,3 +1,4 @@
+// 静态网格：二进制 .staticmesh 加载，VBO/IBO 上传，全屏四边形与地面
 #pragma once
 #include <string>
 #include <unordered_map>

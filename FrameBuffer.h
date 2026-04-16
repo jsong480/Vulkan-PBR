@@ -1,3 +1,4 @@
+// 离屏 Framebuffer：按附件列表构建 RenderPass + Framebuffer
 #pragma once
 #include "MyVulkan.h"
 class FrameBufferEx {

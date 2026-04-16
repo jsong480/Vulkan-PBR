@@ -1,3 +1,4 @@
+// Win32 窗口与消息循环：初始化 Vulkan/场景后每帧 RenderOneFrame
 #include <windows.h>
 #include <windowsx.h>
 #include <cstdio>
@@ -153,6 +154,5 @@ INT WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			UpdateTitle();
 		}
 	}
-	//OnQuit();
 	return 0;
 }
